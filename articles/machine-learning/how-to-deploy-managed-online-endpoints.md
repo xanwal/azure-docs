@@ -205,17 +205,23 @@ subscription_id = '<SUBSCRIPTION_ID>'
 resource_group = '<RESOURCE_GROUP>'
 workspace = '<AML_WORKSPACE_NAME>'
 
-ml_client = MLClient(DefaultAzureCredential(), subscription_id, resource_group, workspace)
+ml_client = MLClient(DefaultAzureCredential(),
+                     subscription_id,
+                     resource_group,
+                     workspace)
 ```
 Then, deploy the endpoint from the YAML file using `begin_create_or_update`. 
 ```python
-endpoint = ManagedOnlineEndpoint.load('endpoints/online/managed/sample/endpoint.yml', local=True)
+endpoint = ManagedOnlineEndpoint.load(
+                path='endpoints/online/managed/sample/endpoint.yml',
+                local=True)
 endpoint = ml_client.online_endpoints.begin_create_or_update(endpoint)
 ```
 Now, create a deployment named `blue` under the endpoint and update the name in the YAML file to the unique name generated above. 
 ```python
-deployment = ManagedOnlineDeployment.load('endpoints/online/managed/sample/deployment.yml', local=True) 
-deployment.endpoint_name = endpoint_name
+deployment = ManagedOnlineDeployment.load(
+                 path=os.path.join(base_path,'deployment.yml'), 
+                 local=True) 
 deployment = ml_client.begin_create_or_update(deployment)
 ```
 --- 
@@ -308,8 +314,7 @@ To create the deployment named `blue` under the endpoint, run the following code
   # [Python SDK v2](#tab/python)
 ```python
 # TODO: Traffic
-yaml_path = os.path.join(base_path, 'deployment.yml')
-deployment = ManagedOnlineDeployment.load(yaml_path) 
+deployment = ManagedOnlineDeployment.load(os.path.join(base_path, 'deployment.yml')) 
 deployment = ml_client.begin_create_or_update(deployment)
 ```
 ---
@@ -364,36 +369,38 @@ ml_client.online_deployments.get_logs(name=deployment.name, endpoint_name=endpoi
 --- 
 ### Invoke the endpoint to score data by using your model
 
-You can use either `invoke` or a REST client of your choice to invoke the endpoint and score some data: 
-
 # [AzureCLI](#tab/azurecli)
+
+You can use either the `invoke` command or a REST client of your choice to invoke the endpoint and score some data: 
+
 ::: code language="azurecli" source="~/azureml-examples-main/cli/deploy-managed-online-endpoint.sh" ID="test_endpoint" :::
-# [Python SDK v2](#tab/python)
-```python
-ml_client.online_endpoints.invoke(endpoint_name=endpoint.name, request_file='endpoints/online/model-1/sample-request.json')
-```
---- 
 
 The following example shows how to get the key used to authenticate to the endpoint:
 
-# [AzureCLI](#tab/azurecli)
 :::code language="azurecli" source="~/azureml-examples-main/cli/deploy-managed-online-endpoint.sh" ID="test_endpoint_using_curl_get_key":::
-# [Python SDK v2](#tab/python)
-```python
-auth_token = ml_client.online_endpoints.list_keys(endpoint_name).access_token
-``` 
---- 
-Next, score the data. 
 
-# [AzureCLI](#tab/azurecli)
-Using curl: 
+Next, use curl to score data.
+
 ::: code language="azurecli" source="~/azureml-examples-main/cli/deploy-managed-online-endpoint.sh" ID="test_endpoint_using_curl" :::
 
 Notice we use `show` and `get-credentials` commands to get the authentication credentials. Also notice that we're using the `--query` flag to filter attributes to only what we need. To learn more about `--query`, see [Query Azure CLI command output](/cli/azure/query-azure-cli).
 
 To see the invocation logs, run `get-logs` again.
+
 # [Python SDK v2](#tab/python)
-Using requests: 
+You can use either the `invoke` method or a REST client of your choice to invoke the endpoint and score some data: 
+```python
+ml_client.online_endpoints.invoke(
+    endpoint_name=endpoint.name, 
+    request_file=os.path.join(base_path, 'sample-request.json'))
+```
+The following example shows how to get the key used to authenticate to the endpoint:
+```
+```python
+auth_token = ml_client.online_endpoints.list_keys(endpoint_name).access_token
+``` 
+Next, use requests to score data.
+
 ```python
 import requests
 import json 
@@ -403,7 +410,7 @@ scoring_uri = endpoint.scoring_uri
 headers = {'Authorization' : f'Bearer {auth_token}'} 
 response = requests.post(url=scoring_uri, data=data, headers=headers).json()
 ```
---- 
+
 
 ### (Optional) Update the deployment
 # [AzureCLI](#tab/azurecli) 
@@ -448,12 +455,11 @@ To understand how `update` works:
 1. Save the file.
 1. Run this command:
     ```python
-    yaml_path = os.path.join(base_path, 'blue-deployment.yml')
-    deployment = OnlineDeployment.load(yaml_path) 
+    deployment = ManagedOnlineDeployment.load(os.path.join(base_path, 'blue-deployment.yml'))
     deployment = ml_client.online_deployments.begin_create_or_update(deployment)
     ```
     > [!Note]
-    > Updating by using YAML is declarative. That is, changes in the YAML are reflected in the underlying Azure Resource Manager resources (endpoints and deployments). A declarative approach facilitates [GitOps](https://www.atlassian.com/git/tutorials/gitops): *All* changes to endpoints and deployments (even `instance_count`) go through the YAML. You can make updates without using the YAML by passing arguments to the `OnlineDeployment` constructor and setting attributes.
+    > Updating by using YAML is declarative. That is, changes in the YAML are reflected in the underlying Azure Resource Manager resources (endpoints and deployments). A declarative approach facilitates [GitOps](https://www.atlassian.com/git/tutorials/gitops): *All* changes to endpoints and deployments (even `instance_count`) go through the YAML. You can make updates without using the YAML by passing arguments to the `ManagedOnlineDeployment` constructor and setting attributes.
 
 1. Because you modified the `init()` function (`init()` runs when the endpoint is created or updated), the message `Updated successfully` will be in the logs. Retrieve the logs by running:
     ```python
@@ -508,7 +514,6 @@ If you aren't going use the deployment, you should delete it by running the foll
 ```python 
 ml_client.online_endpoints.begin_delete(name=endpoint.name)
 ```
----
 
 
 ## Next steps
