@@ -5,7 +5,7 @@ description: 'Learn to deploy your model with NVIDIA Triton Inference Server in 
 services: machine-learning
 ms.service: machine-learning
 ms.subservice: core
-ms.date: 03/31/2022
+ms.date: 04/17/2022
 ms.topic: how-to
 ms.reviewer: larryfr
 ms.author: ssambare
@@ -18,11 +18,13 @@ ms.devlang: azurecli
 
 [!INCLUDE [cli v2 how to update](../../includes/machine-learning-cli-v2-update-note.md)]
 
+[!INCLUDE [python sdk v2 how to update](../../includes/machine-learning-python-sdk-v2-update-note.md)]
+
 Learn how to use [NVIDIA Triton Inference Server](https://aka.ms/nvidia-triton-docs) in Azure Machine Learning with [Managed online endpoints](concept-endpoints.md#managed-online-endpoints).
 
 Triton is multi-framework, open-source software that is optimized for inference. It supports popular machine learning frameworks like TensorFlow, ONNX Runtime, PyTorch, NVIDIA TensorRT, and more. It can be used for your CPU or GPU workloads.
 
-In this article, you will learn how to deploy Triton and a model to a managed online endpoint. Information is provided on using both the CLI (command line) and Azure Machine Learning studio.
+In this article, you will learn how to deploy Triton and a model to a managed online endpoint. Information is provided on using the CLI (command line), the AML Python SDK (v2), and Azure Machine Learning studio.
 
 [!INCLUDE [preview disclaimer](../../includes/machine-learning-preview-generic-disclaimer.md)]
 
@@ -74,12 +76,12 @@ This section shows how you can deploy Triton to managed online endpoint using th
     pip install gevent
     ```
 
-1. Create a YAML configuration file for your endpoint. The following example configures the name and authentication mode of the endpoint. The one used in the following commands is located at `/cli/endpoints/online/triton/single-model/create-managed-endpoint.yml` in the azureml-examples repo you cloned earlier:
+1. Create a YAML configuration file for your endpoint. The following example configures the name and authentication mode of the endpoint. The one used in the following commands is located at `/cli/endpoints/online/triton/single-model/create-managed-endpoint.yml` in the azureml-examples repo you cloned earlier:\
 
     __create-managed-endpoint.yaml__
-
+    
     :::code language="yaml" source="~/azureml-examples-main/cli/endpoints/online/triton/single-model/create-managed-endpoint.yaml":::
-
+    
 1. To create a new endpoint using the YAML configuration, use the following command:
 
     :::code language="azurecli" source="~/azureml-examples-main/cli/deploy-triton-managed-online-endpoint.sh" ID="create_endpoint":::
@@ -136,6 +138,134 @@ Use the following command to delete your model:
 ```azurecli
 az ml model delete --name $MODEL_NAME --version $MODEL_VERSION
 ```
+
+## Deploy using Python SDK (v2)
+
+[!INCLUDE [python sdk v2](../../includes/machine-learning-python-sdk-v2.md)]
+
+This section shows how you can deploy Triton to managed online endpoint using the AML Python SDK (v2). 
+
+> [!IMPORTANT]
+> For Triton no-code-deployment, **[testing via local endpoints](how-to-deploy-managed-online-endpoints.md#deploy-and-debug-locally-by-using-local-endpoints)** is currently not supported.
+
+1. Import the required libraries and get a handle to the workspace
+    ```python
+    from azure.ml import MLClient
+    from azure.ml.entities import ManagedOnlineEndpoint, ManagedOnlineDeployment
+    from azure.identity import InteractiveBrowserCredential
+
+    subscription_id = '<SUBSCRIPTION_ID>'
+    resource_group = '<RESOURCE_GROUP>'
+    workspace = '<AML_WORKSPACE_NAME>'
+
+    ml_client = MLClient(InteractiveBrowserCredential(), subscription_id, resource_group, workspace)
+    ```
+
+1. To avoid typing in a path for multiple commands, use the following command to set a `base_path` variable. This variable points to the directory where the model and associated YAML configuration files are located:
+    ```python
+    base_path = 'sdk/endpoints/triton/single_model'
+    ```
+
+1. Set the name of the endpoint that will be created. In this example, a random name is created for the endpoint:
+
+    ```python
+    import datetime
+    endpoint_name = "single-endpt-" + datetime.datetime.now().strftime("%m%d%H%M%f")     
+    ```
+
+1. Install Python requirements using the following commands:
+
+    ```azurecli
+    pip install numpy
+    pip install tritonclient[http]
+    pip install pillow
+    pip install gevent
+    ```
+
+1. Create a YAML configuration file for your endpoint. The following example configures the name and authentication mode of the endpoint. The one used in the following commands is located at `sdk/endpoints/triton/single_model/create-managed-deploymnet.yaml` in the azureml-examples repo you cloned earlier:
+
+    __create-managed-endpoint.yaml__
+
+    :::code language="yaml" source="~/azureml-examples-sdk-preview/sdk/endpoints/online/triton/single_model/create-managed-endpoint.yaml":::
+
+1. To create a new endpoint using the YAML configuration, use the following command:
+
+    ```python
+    import os.path
+    yaml_path = os.path.join(base_path, 'create-managed-endpoint.yaml')
+    endpoint = ManagedOnlineEndpoint.load(yaml_path)
+    endpoint.name = endpoint_name
+    ml_client.begin_create_or_update(endpoint) 
+    ```
+
+1. Create a YAML configuration file for the deployment. The following example configures a deployment named __blue__ to the endpoint created in the previous step. The one used in the following commands is located at `sdk/endpoints/triton/single_model/create-managed-deployment.yaml` in the azureml-examples repo you cloned earlier:
+
+    > [!IMPORTANT]
+    > For Triton no-code-deployment (NCD) to work, setting **`type`** to **`triton_model​`** is required, `type: triton_model​`. For more information, see [CLI (v2) model YAML schema](reference-yaml-model.md).
+    >
+    > This deployment uses a Standard_NC6s_v3 VM. You may need to request a quota increase for your subscription before you can use this VM. For more information, see [NCv3-series](../virtual-machines/ncv3-series.md).
+
+    :::code language="yaml" source="~/azureml-examples-main/cli/endpoints/online/triton/single-model/create-managed-deployment.yaml":::
+
+1. To create the deployment using the YAML configuration, use the following command:
+
+    ```python
+    yaml_path = os.path.join(base_path,'create-managed-deployment.yaml')
+    deployment = ManagedOnlineDeployment.load(yaml_path)
+    deployment.endpoint_name = endpoint_name
+    ml_client.begin_create_or_update(deployment)
+    ```
+
+### Invoke your endpoint
+
+Once your deployment completes, use the following command to make a scoring request to the deployed endpoint. 
+
+> [!TIP]
+> The file `/sdk/endpoints/online/triton/single-model/triton_densenet_scoring.py` in the azureml-examples repo is used for scoring. The image passed to the endpoint needs pre-processing to meet the size, type, and format requirements, and post-processing to show the predicted label. The `triton_densenet_scoring.py` uses the `tritonclient.http` library to communicate with the Triton inference server.
+
+1. To get the endpoint scoring uri, use the following command:
+
+    ```python
+    scoring_uri = endpoint.scoring_uri
+    ```
+
+1. To get an authentication token, use the following command:
+
+    ```python
+    auth_token = ml_client.online_endpoints.list_keys(endpoint_name).access_token
+    ```
+
+1. To score data with the endpoint, use the following command. It submits the image of a peacock (https://aka.ms/peacock-pic) to the endpoint:
+
+    ```python
+    from single_model import triton_densenet_scoring
+    triton_densenet_scoring.score(scoring_uri, auth_token)
+    ```
+    The response from the script is similar to the following text:
+
+    ```
+    Is server ready - True
+    Is model ready - True
+    /azureml-examples/cli/endpoints/online/triton/single-model/densenet_labels.txt
+    84 : PEACOCK
+    ```
+
+### Delete your endpoint and model
+
+Once you're done with the endpoint, use the following command to delete it:
+
+    ```python
+    model_name = deployment.model.name
+    model_version = deployment.model.version
+    ml_client.online_endpoints.begin_delete(endpoint_name)
+    ```
+
+Use the following command to delete your model:
+
+    ```python
+    ml_client.models.archive(model_name, model_version)
+    ```
+
 
 ## Deploy using Azure Machine Learning studio
 

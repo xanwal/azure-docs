@@ -8,15 +8,19 @@ ms.subservice: mlops
 ms.author: seramasu
 ms.reviewer: larryfr
 author: rsethur
-ms.date: 03/31/2022
+ms.date: 04/17/2022
 ms.topic: how-to
 ms.custom: how-to, devplatv2, ignite-fall-2021, cliv2
 ---
 
 # Deploy and score a machine learning model by using an online endpoint (preview)
-
-[!INCLUDE [cli v2](../../includes/machine-learning-cli-v2.md)]
-[!INCLUDE [cli v2 how to update](../../includes/machine-learning-cli-v2-update-note.md)]
+# [Azure CLI](#tab/azurecli)
+  [!INCLUDE [cli v2](../../includes/machine-learning-cli-v2.md)]
+  [!INCLUDE [cli v2 how to update](../../includes/machine-learning-cli-v2-update-note.md)]
+# [Python SDK v2](#tab/python)
+  [!INCLUDE [python sdk v2](../../includes/machine-learning-python-sdk-v2.md)]
+  [!INCLUDE [python sdk v2 how to update](../../includes/machine-learning-python-sdk-v2-update-note.md)]
+---
 
 Learn how to use an online endpoint (preview) to deploy your model, so you don't have to create and manage the underlying infrastructure. You'll begin by deploying a model on your local machine to debug any errors, and then you'll deploy and test it in Azure.
 
@@ -27,45 +31,67 @@ Managed online endpoints help to deploy your ML models in a turnkey manner. Mana
 [!INCLUDE [preview disclaimer](../../includes/machine-learning-preview-generic-disclaimer.md)]
 
 ## Prerequisites
+# [Azure CLI](#tab/azurecli)
+  * To use Azure Machine Learning, you must have an Azure subscription. If you don't have an Azure subscription, create a free account before you begin. Try the [free or paid version of Azure Machine Learning](https://azure.microsoft.com/free/).
+    
+  * Install and configure the Azure CLI and the `ml` extension to the Azure CLI. For more information, see [Install, set up, and use the CLI (v2) (preview)](how-to-configure-cli.md). 
+    
+  * You must have an Azure resource group, and you (or the service principal you use) must have Contributor access to it. A resource group is created in [Install, set up, and use the CLI (v2) (preview)](how-to-configure-cli.md). 
+    
+  * You must have an Azure Machine Learning workspace. A workspace is created in [Install, set up, and use the CLI (v2) (preview)](how-to-configure-cli.md).
+    
+  * If you haven't already set the defaults for the Azure CLI, save your default settings. To avoid passing in the values for your subscription, workspace, and resource group multiple times, run this code:
+    
+      ```azurecli
+      az account set --subscription <subscription ID>
+      az configure --defaults workspace=<Azure Machine Learning workspace name> group=<resource group>
+      ```
+    
+  * (Optional) To deploy locally, you must [install Docker Engine](https://docs.docker.com/engine/install/) on your local computer. We *highly recommend* this option, so it's easier to debug issues.
+  
+  > [!IMPORTANT]
+  > The examples in this document assume that you are using the Bash shell. For example, from a Linux system or [Windows Subsystem for Linux](/windows/wsl/about).
 
-* To use Azure Machine Learning, you must have an Azure subscription. If you don't have an Azure subscription, create a free account before you begin. Try the [free or paid version of Azure Machine Learning](https://azure.microsoft.com/free/).
+# [Python SDK v2](#tab/python)
+  * To use Azure Machine Learning, you must have an Azure subscription. If you don't have an Azure subscription, create a free account before you begin. Try the [free or paid version of Azure Machine Learning](https://azure.microsoft.com/free/).
 
-* Install and configure the Azure CLI and the `ml` extension to the Azure CLI. For more information, see [Install, set up, and use the CLI (v2) (preview)](how-to-configure-cli.md). 
+  * Install and configure the [Python SDK v2](how-to-configure-python-sdk-v2.md).
 
-* You must have an Azure resource group, and you (or the service principal you use) must have Contributor access to it. A resource group is created in [Install, set up, and use the CLI (v2) (preview)](how-to-configure-cli.md). 
+  * You must have an Azure resource group, and you (or the service principal you use) must have Contributor access to it. A resource group can be [created and managed through the Azure portal](../azure-resource-manager/management/manage-resource-groups-portal.md).
 
-* You must have an Azure Machine Learning workspace. A workspace is created in [Install, set up, and use the CLI (v2) (preview)](how-to-configure-cli.md).
+  * You must have an Azure Machine Learning workspace. A workspace is created in [Install and set up the Python SDK (v2)](how-to-configure-python-sdk-v2.md)
 
-* If you haven't already set the defaults for the Azure CLI, save your default settings. To avoid passing in the values for your subscription, workspace, and resource group multiple times, run this code:
+  * (Optional) To deploy locally, you must install [Docker Engine](https://docs.docker.com/engine/install/) on your local computer. We highly recommend this option, so it's easier to debug issues.
 
-   ```azurecli
-   az account set --subscription <subscription ID>
-   az configure --defaults workspace=<Azure Machine Learning workspace name> group=<resource group>
-   ```
-
-* (Optional) To deploy locally, you must [install Docker Engine](https://docs.docker.com/engine/install/) on your local computer. We *highly recommend* this option, so it's easier to debug issues.
-
-> [!IMPORTANT]
-> The examples in this document assume that you are using the Bash shell. For example, from a Linux system or [Windows Subsystem for Linux](/windows/wsl/about). 
+--- 
 
 ## Prepare your system
 
-To follow along with this article, first clone the samples repository (azureml-examples). Then, run the following code to go to the samples directory:
+# [Azure CLI](#tab/azurecli)
+  To follow along with this article, first clone the samples repository (azureml-examples). Then, run the following code to go to the samples directory:
 
-```azurecli
-git clone https://github.com/Azure/azureml-examples
-cd azureml-examples
-cd cli
-```
+  ```azurecli
+  git clone https://github.com/Azure/azureml-examples
+  cd azureml-examples
+  cd cli
+  ```
+  To set your endpoint name, choose one of the following commands, depending on your operating system (replace `YOUR_ENDPOINT_NAME` with a unique name).
+  
+  For Unix, run this command:
+  
+  :::code language="azurecli" source="~/azureml-examples-main/cli/deploy-local-endpoint.sh" ID="set_endpoint_name":::
+  
+  > [!NOTE]
+  > Endpoint names must be unique within an Azure region. For example, in the Azure `westus2` region, there can be only one endpoint with the name `my-endpoint`. 
 
-To set your endpoint name, choose one of the following commands, depending on your operating system (replace `YOUR_ENDPOINT_NAME` with a unique name).
+# [Python SDK v2](#tab/python)
+  To follow along with this article, first clone the `sdk-preview` branch of the samples repository (azureml-examples). Then, run the following code to go into the samples directory for the Python SDK (v2):
 
-For Unix, run this command:
-
-:::code language="azurecli" source="~/azureml-examples-main/cli/deploy-local-endpoint.sh" ID="set_endpoint_name":::
-
-> [!NOTE]
-> Endpoint names must be unique within an Azure region. For example, in the Azure `westus2` region, there can be only one endpoint with the name `my-endpoint`. 
+  ```azurecli
+  git clone https://github.com/Azure/azureml-examples --branch sdk-preview
+  cd azureml-examples/sdk
+  ```
+---
 
 ## Review the endpoint and deployment configurations
 
@@ -153,9 +179,8 @@ To save time debugging, we *highly recommend* that you test-run your endpoint lo
 > - Local endpoints support only one deployment per endpoint. 
 
 ### Deploy the model locally
-
+# [AzureCLI](#tab/azurecli)
 First create the endpoint. Optionally, for a local endpoint, you can skip this step and directly create the deployment (next step), which will, in turn, create the required metadata. This is useful for development and testing purposes.
-
 :::code language="azurecli" source="~/azureml-examples-main/cli/deploy-local-endpoint.sh" ID="create_endpoint":::
 
 Now, create a deployment named `blue` under the endpoint.
@@ -167,11 +192,47 @@ The `--local` flag directs the CLI to deploy the endpoint in the Docker environm
 > [!TIP]
 > Use Visual Studio Code to test and debug your endpoints locally. For more information, see [debug online endpoints locally in Visual Studio Code](how-to-debug-managed-online-endpoints-visual-studio-code.md).
 
+# [Python SDK v2](#tab/python)
+First, import the required libraries and get a handle to the workspace.
+```python
+from azure.ml import MLClient
+from azure.ml.entities import ManagedOnlineEndpoint, ManagedOnlineDeployment, Model, Environment, CodeConfiguration
+from azure.identity import DefaultAzureCredential
+
+subscription_id = '<SUBSCRIPTION_ID>'
+resource_group = '<RESOURCE_GROUP>'
+workspace = '<AML_WORKSPACE_NAME>'
+
+ml_client = MLClient(DefaultAzureCredential(), subscription_id, resource_group, workspace)
+```
+Then, generate a unique endpoint name and deploy the endpoint from the YAML file using `begin_create_or_update`. 
+```python
+import datetime
+endpoint_name = "single-endpt-" + datetime.datetime.now().strftime("%m%d%H%M%f") 
+
+endpoint = ManagedOnlineEndpoint.load('endpoints/online/managed/sample/endpoint.yml', local=True)
+endpoint.name = endpoint_name
+endpoint = ml_client.online_endpoints.begin_create_or_update(endpoint)
+```
+Now, create a deployment named `blue` under the endpoint and update the name in the YAML file to the unique name generated above. 
+```python
+deployment = ManagedOnlineDeployment.load('endpoints/online/managed/sample/deployment.yml', local=True) 
+deployment.endpoint_name = endpoint_name
+deployment = ml_client.begin_create_or_update(deployment)
+```
+--- 
+
 ### Verify the local deployment succeeded
 
 Check the status to see whether the model was deployed without error:
 
+# [AzureCLI](#tab/azurecli)
 :::code language="azurecli" source="~/azureml-examples-main/cli/deploy-local-endpoint.sh" ID="get_status":::
+# [Python SDK v2](#tab/python)
+```python
+endpoint.dump()
+```
+---
 
 The output should appear similar to the following JSON. Note that the `provisioning_state` is `Succeeded`.
 
@@ -189,19 +250,35 @@ The output should appear similar to the following JSON. Note that the `provision
 ```
 
 ### Invoke the local endpoint to score data by using your model
-
+# [AzureCLI](#tab/azurecli)
 Invoke the endpoint to score the model by using the convenience command `invoke` and passing query parameters that are stored in a JSON file:
 
 :::code language="azurecli" source="~/azureml-examples-main/cli/deploy-local-endpoint.sh" ID="test_endpoint":::
 
 If you want to use a REST client (like curl), you must have the scoring URI. To get the scoring URI, run `az ml online-endpoint show --local -n $ENDPOINT_NAME`. In the returned data, find the `scoring_uri` attribute. Sample curl based commands are available later in this doc.
 
-### Review the logs for output from the invoke operation
+# [Python SDK v2](#tab/python)
+Invoke the endpoint to score the model by using the method `invoke` and passing query parameters that are stored in a JSON file:
 
-In the example *score.py* file, the `run()` method logs some output to the console. You can view this output by using the `get-logs` command again:
+```python
+result = ml_client.online_endpoints.invoke(endpoint_name=endpoint_name, request_file='endpoints/online/model-1/sample-request.json', local=True)
+```
+
+If you want to use a REST client (like requests), you must have the scoring URI. The scoring URI can be accessed through the scoring_uri attribute of a deployed online endpoint object `endpoint.scoring_uri`. To access a deployed (local) online endpoint object, run `ml_client.online_endpoints.get(endpoint_name, local=True)`.
+
+---
+
+### Review the logs for output from the invoke operation
+In the example *score.py* file, the `run()` method logs some output to the console. You can view this output by using the `get-logs` command or its equivalent.  
+# [AzureCLI](#tab/azurecli)
 
 :::code language="azurecli" source="~/azureml-examples-main/cli/deploy-local-endpoint.sh" ID="get_logs":::
 
+# [Python SDK v2](#tab/python)
+```python
+ml_client.online_deployments.get_logs(name=deployment.name, endpoint_name=endpoint.name, lines=50, local=True)
+```
+---
 ##  Deploy your online endpoint to Azure
 
 Next, deploy your online endpoint to Azure.
@@ -210,17 +287,32 @@ Next, deploy your online endpoint to Azure.
 
 To create the endpoint in the cloud, run the following code:
 
+# [AzureCLI](#tab/azurecli)
 ::: code language="azurecli" source="~/azureml-examples-main/cli/deploy-managed-online-endpoint.sh" ID="create_endpoint" :::
-
+# [Python SDK v2](#tab/python)
+```python
+endpoint = ManagedOnlineEndpoint.load('endpoints/online/managed/sample/endpoint.yml')
+endpoint.name = endpoint_name
+endpoint = ml_client.online_endpoints.begin_create_or_update(endpoint)
+```
+---
 To create the deployment named `blue` under the endpoint, run the following code:
-
+ # [AzureCLI](#tab/azurecli)
 ::: code language="azurecli" source="~/azureml-examples-main/cli/deploy-managed-online-endpoint.sh" ID="create_deployment" :::
+
+  # [Python SDK v2](#tab/python)
+```python
+# TODO: Traffic
+deployment = ManagedOnlineDeployment.load('endpoints/online/managed/sample/deployment.yml') 
+deployment.endpoint_name = endpoint_name
+deployment = ml_client.begin_create_or_update(deployment)
+```
+---
 
 This deployment might take up to 15 minutes, depending on whether the underlying environment or image is being built for the first time. Subsequent deployments that use the same environment will finish processing more quickly.
 
 > [!Important]
-> The --all-traffic flag in the above `az ml online-deployment create` allocates 100% of the traffic to the endpoint to the newly created deployment. Though this is helpful for development and testing purposes, for production, you might want to open traffic to the new deployment through an explicit command. For example,
-> `az ml online-endpoint update -n $ENDPOINT_NAME --traffic "blue=100"` 
+> The --all-traffic flag in the above commands allocates 100% of the traffic to the endpoint to the newly created deployment. Though this is helpful for development and testing purposes, for production, you might want to open traffic to the new deployment through an explicit command. For example, `az ml online-endpoint update -n $ENDPOINT_NAME --traffic "blue=100"` 
 
 > [!TIP]
 > * If you prefer not to block your CLI console, you may add the flag `--no-wait` to the command. However, this will stop the interactive display of the deployment status.
@@ -228,7 +320,7 @@ This deployment might take up to 15 minutes, depending on whether the underlying
 > * Use [Troubleshooting online endpoints deployment (preview)](./how-to-troubleshoot-online-endpoints.md) to debug errors.
 
 ### Check the status of the deployment
-
+# [AzureCLI](#tab/azurecli)
 The `show` command contains information in `provisioning_status` for endpoint and deployment:
 
 ::: code language="azurecli" source="~/azureml-examples-main/cli/deploy-managed-online-endpoint.sh" ID="get_status" :::
@@ -239,35 +331,78 @@ You can list all the endpoints in the workspace in a table format by using the `
 az ml online-endpoint list --output table
 ```
 
+# [Python SDK v2](#tab/python])
+Provisioning status can be accessed through the `provisioning_state` attribute of endpoints and deployments.
+```python
+online_deployment.provisioning_state
+```
+
+You can list all the endpoints in the workspace by using the `list` method:
+
+```python
+ml_client.online_deployments.list()
+```
+--- 
 ### Check the status of the cloud deployment
 
 Check the logs to see whether the model was deployed without error:
 
+# [AzureCLI](#tab/azurecli)
 :::code language="azurecli" source="~/azureml-examples-main/cli/deploy-managed-online-endpoint.sh" ID="get_logs" :::
 
 By default, logs are pulled from inference-server. To see the logs from storage-initializer (it mounts assets like model and code to the container), add the `--container storage-initializer` flag.
 
+# [Python SDK v2](#tab/python)
+```python
+ml_client.online_deployments.get_logs(name=deployment.name, endpoint_name=endpoint.name)
+```
+--- 
 ### Invoke the endpoint to score data by using your model
 
-You can use either the `invoke` command or a REST client of your choice to invoke the endpoint and score some data: 
+You can use either `invoke` or a REST client of your choice to invoke the endpoint and score some data: 
 
+# [AzureCLI](#tab/azurecli)
 ::: code language="azurecli" source="~/azureml-examples-main/cli/deploy-managed-online-endpoint.sh" ID="test_endpoint" :::
+# [Python SDK v2](#tab/python)
+```python
+ml_client.online_endpoints.invoke(endpoint_name=endpoint.name, request_file='endpoints/online/model-1/sample-request.json')
+```
+--- 
 
 The following example shows how to get the key used to authenticate to the endpoint:
 
+# [AzureCLI](#tab/azurecli)
 :::code language="azurecli" source="~/azureml-examples-main/cli/deploy-managed-online-endpoint.sh" ID="test_endpoint_using_curl_get_key":::
+# [Python SDK v2](#tab/python)
+```python
+auth_token = ml_client.online_endpoints.list_keys(endpoint_name).access_token
+``` 
+--- 
+Next, score the data. 
 
-Next, use curl to score data.
-
+# [AzureCLI](#tab/azurecli)
+Using curl: 
 ::: code language="azurecli" source="~/azureml-examples-main/cli/deploy-managed-online-endpoint.sh" ID="test_endpoint_using_curl" :::
 
 Notice we use `show` and `get-credentials` commands to get the authentication credentials. Also notice that we're using the `--query` flag to filter attributes to only what we need. To learn more about `--query`, see [Query Azure CLI command output](/cli/azure/query-azure-cli).
 
 To see the invocation logs, run `get-logs` again.
+# [Python SDK v2](#tab/python)
+Using requests: 
+```python
+import requests
+import json 
+with open('endpoints/online/model-1/sample-request.json') as f:
+    data = json.loads(f.read())
+scoring_uri = endpoint.scoring_uri
+headers = {'Authorization' : f'Bearer {auth_token}'} 
+response = requests.post(url=scoring_uri, data=data, headers=headers).json()
+```
+--- 
 
 ### (Optional) Update the deployment
 
-If you want to update the code, model, or environment, update the YAML file, and then run the `az ml online-endpoint update` command. 
+If you want to update the code, model, or environment, update the YAML file, and then run the `az ml online-endpoint update` command in the Azure CLI or the `begin_create_or_update` method of your `ml-client` hanldle. 
 
 > [!Note]
 > If you update instance count and along with other model settings (code, model, or environment) in a single `update` command: first the scaling operation will be performed, then the other updates will be applied. In production environment is a good practice to perform these operations separately.
@@ -277,18 +412,35 @@ To understand how `update` works:
 1. Open the file *online/model-1/onlinescoring/score.py*.
 1. Change the last line of the `init()` function: After `logging.info("Init complete")`, add `logging.info("Updated successfully")`. 
 1. Save the file.
-1. Run this command:
-
+1. Run these commands:
+    
+    # [AzureCLI](#tab/azurecli) 
     ```azurecli
     az ml online-deployment update -n blue --endpoint $ENDPOINT_NAME -f endpoints/online/managed/sample/blue-deployment.yml
     ```
-
     > [!Note]
     > Updating by using YAML is declarative. That is, changes in the YAML are reflected in the underlying Azure Resource Manager resources (endpoints and deployments). A declarative approach facilitates [GitOps](https://www.atlassian.com/git/tutorials/gitops): *All* changes to endpoints and deployments (even `instance_count`) go through the YAML. You can make updates without using the YAML by using the `--set` flag.
-    
-1. Because you modified the `init()` function (`init()` runs when the endpoint is created or updated), the message `Updated successfully` will be in the logs. Retrieve the logs by running:
 
-    :::code language="azurecli" source="~/azureml-examples-main/cli/deploy-managed-online-endpoint.sh" ID="get_logs" :::
+    # [Python SDK v2](#tab/python)
+    ```python
+    yaml_file = os.path.join(base_path, 'blue-deployment.yml')
+    deployment = OnlineDeployment.load(yaml_file) 
+    ml_client.online_deployments.begin_create_or_update(deployment)
+    ```
+    --- 
+    > [!Note]
+    > Updating by using YAML is declarative. That is, changes in the YAML are reflected in the underlying Azure Resource Manager resources (endpoints and deployments). A declarative approach facilitates [GitOps](https://www.atlassian.com/git/tutorials/gitops): *All* changes to endpoints and deployments (even `instance_count`) go through the YAML. You can make updates without using the YAML by setting the entity's attributes and running `ml_client.begin_create_or_update` with the modified object. 
+    ---
+    
+  1. Because you modified the `init()` function (`init()` runs when the endpoint is created or updated), the message `Updated successfully` will be in the logs. Retrieve the logs by running:
+    # [AzureCLI](#tab/azurecli) 
+        :::code language="azurecli" source="~/azureml-examples-main/cli/deploy-managed-online-endpoint.sh" ID="get_logs" :::
+    
+    # [Python SDK v2](#tab/python)
+        ```python
+        ml_client.online_deployments.get_logs(name=deployment.name, endpoint_name=endpoint.name)
+        ```
+    ---
 
 The `update` command also works with local deployments. Use the same `az ml online-deployment update` command with the `--local` flag.
 
@@ -331,7 +483,15 @@ The logs might take up to an hour to connect. After an hour, send some scoring r
 
 If you aren't going use the deployment, you should delete it by running the following code (it deletes the endpoint and all the underlying deployments):
 
+# [AzureCLI](#tab/azurecli) 
 ::: code language="azurecli" source="~/azureml-examples-main/cli/deploy-managed-online-endpoint.sh" ID="delete_endpoint" :::
+
+# [Python SDK v2](#tab/python)
+```python 
+ml_client.online_endpoints.begin_delete(name=endpoint.name)
+```
+---
+
 
 ## Next steps
 
