@@ -72,3 +72,7 @@ To create a basic workspace, we will define the following attributes
 - `tags` - (Optional) Tags to help search/filter on workspace easily
 
 Using the `MLClient` created earlier, we will create the workspace. This command will start workspace creation and provide a confirmation.
+
+```python
+ml_client.workspaces.begin_create(workspace_name=)
+``` 
