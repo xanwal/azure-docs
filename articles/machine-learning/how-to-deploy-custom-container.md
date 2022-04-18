@@ -103,7 +103,10 @@ subscription_id = '<SUBSCRIPTION_ID>'
 resource_group = '<RESOURCE_GROUP>'
 workspace = '<AML_WORKSPACE_NAME>'
 
-ml_client = MLClient(DefaultAzureCredential(), subscription_id, resource_group, workspace)
+ml_client = MLClient(DefaultAzureCredential(), 
+                     subscription_id, 
+                     resource_group,
+                     workspace)
 ```
 ---
 
@@ -209,8 +212,7 @@ az ml online-endpoint create --name tfserving-endpoint -f endpoints/online/custo
 # [Python SDK v2](#tab/python)
 ```python
 import os
-yaml_path = os.path.join(base_path, 'tfserving-endpoint.yml')
-endpoint = ManagedOnlineEndpoint.load(yaml_path)
+endpoint = ManagedOnlineEndpoint.load(os.path.join(base_path, 'tfserving-endpoint.yml'))
 endpoint = ml_client.online_endpoints.begin_create_or_update(endpoint)
 ```
 ---
@@ -224,8 +226,7 @@ az ml online-deployment create --name tfserving-deployment -f endpoints/online/c
 
 # [Python SDK v2](#tab/python)
 ```python
-yaml_path = os.path.join(base_path, 'tfserving-deployment.yml')
-deployment = ManagedOnlineDeployment.load(yaml_path)
+deployment = ManagedOnlineDeployment.load(os.path.join(base_path, 'tfserving-deployment.yml'))
 deployment = ml_client.online_deployments.begin_create_or_update(deployment)
 ``` 
 
@@ -239,9 +240,9 @@ Once your deployment completes, see if you can make a scoring request to the dep
 # [Python SDK v2](#tab/python)
 ```python
 response = ml_client.online_endpoints.invoke(
-            endpoint_name = endpoint.name,
-            deployment_name = deployment.name,
-            request_file = 'sample-request.json')
+               endpoint_name = endpoint.name,
+               deployment_name = deployment.name,
+               request_file = 'sample-request.json')
 ```
 
 ### Delete endpoint and model
