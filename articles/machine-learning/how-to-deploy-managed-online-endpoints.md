@@ -289,7 +289,7 @@ ml_client.online_deployments.get_logs(
     lines=50, 
     local=True)
 ```
----
+
 ##  Deploy your online endpoint to Azure
 
 Next, deploy your online endpoint to Azure.
@@ -302,8 +302,7 @@ To create the endpoint in the cloud, run the following code:
 ::: code language="azurecli" source="~/azureml-examples-main/cli/deploy-managed-online-endpoint.sh" ID="create_endpoint" :::
 # [Python SDK v2](#tab/python)
 ```python
-yaml_path = os.path.join(base_path, 'endpoint.yml')
-endpoint = ManagedOnlineEndpoint.load(yaml_path)
+endpoint = ManagedOnlineEndpoint.load(os.path.join(base_path, 'endpoint.yml'))
 endpoint = ml_client.online_endpoints.begin_create_or_update(endpoint)
 ```
 ---
@@ -364,7 +363,9 @@ By default, logs are pulled from inference-server. To see the logs from storage-
 
 # [Python SDK v2](#tab/python)
 ```python
-ml_client.online_deployments.get_logs(name=deployment.name, endpoint_name=endpoint.name)
+ml_client.online_deployments.get_logs(
+    name=deployment.name, 
+    endpoint_name=endpoint.name)
 ```
 --- 
 ### Invoke the endpoint to score data by using your model
@@ -404,11 +405,13 @@ Next, use requests to score data.
 ```python
 import requests
 import json 
-with open('endpoints/online/model-1/sample-request.json') as f:
+with open(os.path.join(base_path,'sample-request.json')) as f:
     data = json.loads(f.read())
 scoring_uri = endpoint.scoring_uri
 headers = {'Authorization' : f'Bearer {auth_token}'} 
-response = requests.post(url=scoring_uri, data=data, headers=headers).json()
+response = requests.post(url=scoring_uri,
+                         data=data, 
+                         headers=headers).json()
 ```
 
 
@@ -455,7 +458,7 @@ To understand how `update` works:
 1. Save the file.
 1. Run this command:
     ```python
-    deployment = ManagedOnlineDeployment.load(os.path.join(base_path, 'blue-deployment.yml'))
+    deployment = ManagedOnlineDeployment.load(os.path.join(base_path,'blue-deployment.yml'))
     deployment = ml_client.online_deployments.begin_create_or_update(deployment)
     ```
     > [!Note]
@@ -463,7 +466,8 @@ To understand how `update` works:
 
 1. Because you modified the `init()` function (`init()` runs when the endpoint is created or updated), the message `Updated successfully` will be in the logs. Retrieve the logs by running:
     ```python
-    ml_client.online_deployments.get_logs(name=deployment.name, endpoint_name=endpoint.name)
+    ml_client.online_deployments.get_logs(name=deployment.name,
+                                          endpoint_name=endpoint.name)
     ```
 
 The `begin_create_or_update` method also works with local deployments. Use the same `ml_client.online_deployment.begin_create_or_update` method with the argument `local=True`.
@@ -514,7 +518,6 @@ If you aren't going use the deployment, you should delete it by running the foll
 ```python 
 ml_client.online_endpoints.begin_delete(name=endpoint.name)
 ```
-
 
 ## Next steps
 
