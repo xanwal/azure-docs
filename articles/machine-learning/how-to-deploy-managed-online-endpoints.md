@@ -407,7 +407,8 @@ response = requests.post(url=scoring_uri, data=data, headers=headers).json()
 
 ### (Optional) Update the deployment
 # [AzureCLI](#tab/azurecli) 
-If you want to update the code, model, or environment, update the YAML file, and then run the `az ml online-endpoint update` command. 
+If you want to update the code, model, or environment, update the YAML file, and then run the `az ml online-endpoint update` command.
+
 > [!Note]
 > If you update instance count and along with other model settings (code, model, or environment) in a single `update` command: first the scaling operation will be performed, then the other updates will be applied. In production environment is a good practice to perform these operations separately.
 
@@ -416,33 +417,20 @@ To understand how `update` works:
 1. Open the file *online/model-1/onlinescoring/score.py*.
 1. Change the last line of the `init()` function: After `logging.info("Init complete")`, add `logging.info("Updated successfully")`. 
 1. Save the file.
-1. Run these commands:
+1. Run this command:
     ```azurecli
     az ml online-deployment update -n blue --endpoint $ENDPOINT_NAME -f endpoints/online/managed/sample/blue-deployment.yml
     ```
     > [!Note]
     > Updating by using YAML is declarative. That is, changes in the YAML are reflected in the underlying Azure Resource Manager resources (endpoints and deployments). A declarative approach facilitates [GitOps](https://www.atlassian.com/git/tutorials/gitops): *All* changes to endpoints and deployments (even `instance_count`) go through the YAML. You can make updates without using the YAML by using the `--set` flag.
 
-
-    ```python
-    yaml_path = os.path.join(base_path, 'blue-deployment.yml')
-    deployment = OnlineDeployment.load(yaml_path) 
-    deployment = ml_client.online_deployments.begin_create_or_update(deployment)
-    ```
     --- 
     > [!Note]
     > Updating by using YAML is declarative. That is, changes in the YAML are reflected in the underlying Azure Resource Manager resources (endpoints and deployments). A declarative approach facilitates [GitOps](https://www.atlassian.com/git/tutorials/gitops): *All* changes to endpoints and deployments (even `instance_count`) go through the YAML. You can make updates without using the YAML by setting the entity's attributes and running `ml_client.begin_create_or_update` with the modified object. 
     ---
-    
-  1. Because you modified the `init()` function (`init()` runs when the endpoint is created or updated), the message `Updated successfully` will be in the logs. Retrieve the logs by running:
-    # [AzureCLI](#tab/azurecli) 
-        :::code language="azurecli" source="~/azureml-examples-main/cli/deploy-managed-online-endpoint.sh" ID="get_logs" :::
-    
-    # [Python SDK v2](#tab/python)
-        ```python
-        ml_client.online_deployments.get_logs(name=deployment.name, endpoint_name=endpoint.name)
-        ```
-    ---
+
+1. Because you modified the `init()` function (`init()` runs when the endpoint is created or updated), the message `Updated successfully` will be in the logs. Retrieve the logs by running:
+      :::code language="azurecli" source="~/azureml-examples-main/cli/deploy-managed-online-endpoint.sh" ID="get_logs" :::
 
 The `update` command also works with local deployments. Use the same `az ml online-deployment update` command with the `--local` flag.
 
@@ -453,7 +441,7 @@ The `update` command also works with local deployments. Use the same `az ml onli
 
 # [Python SDK v2](#tab/python)
 
-If you want to update the code, model, or environment, update the YAML file, and then run the `az ml online-endpoint update` command in the Azure CLI or the `begin_create_or_update` method of your `ml-client` handle. 
+If you want to update the code, model, or environment, update the YAML file, and then call the `begin_create_or_update` method of `MLClient`.  
 
 > [!Note]
 > If you update instance count and along with other model settings (code, model, or environment) in a single `update` command: first the scaling operation will be performed, then the other updates will be applied. In production environment is a good practice to perform these operations separately.
@@ -463,38 +451,25 @@ To understand how `update` works:
 1. Open the file *online/model-1/onlinescoring/score.py*.
 1. Change the last line of the `init()` function: After `logging.info("Init complete")`, add `logging.info("Updated successfully")`. 
 1. Save the file.
-1. Run these commands:
-    ```azurecli
-    az ml online-deployment update -n blue --endpoint $ENDPOINT_NAME -f endpoints/online/managed/sample/blue-deployment.yml
-    ```
-    > [!Note]
-    > Updating by using YAML is declarative. That is, changes in the YAML are reflected in the underlying Azure Resource Manager resources (endpoints and deployments). A declarative approach facilitates [GitOps](https://www.atlassian.com/git/tutorials/gitops): *All* changes to endpoints and deployments (even `instance_count`) go through the YAML. You can make updates without using the YAML by using the `--set` flag.
-
-
+1. Run this command:
     ```python
     yaml_path = os.path.join(base_path, 'blue-deployment.yml')
     deployment = OnlineDeployment.load(yaml_path) 
     deployment = ml_client.online_deployments.begin_create_or_update(deployment)
     ```
-    --- 
     > [!Note]
-    > Updating by using YAML is declarative. That is, changes in the YAML are reflected in the underlying Azure Resource Manager resources (endpoints and deployments). A declarative approach facilitates [GitOps](https://www.atlassian.com/git/tutorials/gitops): *All* changes to endpoints and deployments (even `instance_count`) go through the YAML. You can make updates without using the YAML by setting the entity's attributes and running `ml_client.begin_create_or_update` with the modified object. 
-    ---
-    
-  1. Because you modified the `init()` function (`init()` runs when the endpoint is created or updated), the message `Updated successfully` will be in the logs. Retrieve the logs by running:
-    # [AzureCLI](#tab/azurecli) 
-        :::code language="azurecli" source="~/azureml-examples-main/cli/deploy-managed-online-endpoint.sh" ID="get_logs" :::
-    
-    # [Python SDK v2](#tab/python)
-        ```python
-        ml_client.online_deployments.get_logs(name=deployment.name, endpoint_name=endpoint.name)
-        ```
-    ---
+    > Updating by using YAML is declarative. That is, changes in the YAML are reflected in the underlying Azure Resource Manager resources (endpoints and deployments). A declarative approach facilitates [GitOps](https://www.atlassian.com/git/tutorials/gitops): *All* changes to endpoints and deployments (even `instance_count`) go through the YAML. You can make updates without using the YAML by passing arguments to the `OnlineDeployment` constructor and setting attributes.
 
-The `update` command also works with local deployments. Use the same `az ml online-deployment update` command with the `--local` flag.
+1. Because you modified the `init()` function (`init()` runs when the endpoint is created or updated), the message `Updated successfully` will be in the logs. Retrieve the logs by running:
+    ```python
+    ml_client.online_deployments.get_logs(name=deployment.name, endpoint_name=endpoint.name)
+    ```
+
+The `begin_create_or_update` method also works with local deployments. Use the same `ml_client.online_deployment.begin_create_or_update` method with the argument `local=True`.
 
 > [!TIP]
 > With the `update` command, you can use the [`--set` parameter in the Azure CLI](/cli/azure/use-cli-effectively#generic-update-arguments) to override attributes in your YAML *or* to set specific attributes without passing the YAML file. Using `--set` for single attributes is especially valuable in development and test scenarios. For example, to scale up the `instance_count` value for the first deployment, you could use the `--set instance_count=2` flag. However, because the YAML isn't updated, this technique doesn't facilitate [GitOps](https://www.atlassian.com/git/tutorials/gitops).
+
 > [!Note]
 > The above is an example of inplace rolling update: i.e. the same deployment is updated with the new configuration, with 20% nodes at a time. If the deployment has 10 nodes, 2 nodes at a time will be updated. For production usage, you might want to consider [blue-green deployment](how-to-safely-rollout-managed-endpoints.md), which offers a safer alternative.
 
