@@ -152,13 +152,16 @@ This section shows how you can deploy Triton to managed online endpoint using th
     ```python
     from azure.ml import MLClient
     from azure.ml.entities import ManagedOnlineEndpoint, ManagedOnlineDeployment
-    from azure.identity import InteractiveBrowserCredential
+    from azure.identity import DefaultBrowserCredential
 
     subscription_id = '<SUBSCRIPTION_ID>'
     resource_group = '<RESOURCE_GROUP>'
     workspace = '<AML_WORKSPACE_NAME>'
 
-    ml_client = MLClient(InteractiveBrowserCredential(), subscription_id, resource_group, workspace)
+    ml_client = MLClient(InteractiveBrowserCredential(),
+                         subscription_id,
+                         resource_group,
+                         workspace)
     ```
 
 1. To avoid typing in a path for multiple commands, use the following command to set a `base_path` variable. This variable points to the directory where the model and associated YAML configuration files are located:
@@ -192,8 +195,7 @@ This section shows how you can deploy Triton to managed online endpoint using th
 
     ```python
     import os.path
-    yaml_path = os.path.join(base_path, 'create-managed-endpoint.yaml')
-    endpoint = ManagedOnlineEndpoint.load(yaml_path)
+    endpoint = ManagedOnlineEndpoint.load(os.path.join(base_path, 'create-managed-endpoint.yaml'))
     endpoint.name = endpoint_name
     ml_client.begin_create_or_update(endpoint) 
     ```
@@ -210,8 +212,7 @@ This section shows how you can deploy Triton to managed online endpoint using th
 1. To create the deployment using the YAML configuration, use the following command:
 
     ```python
-    yaml_path = os.path.join(base_path,'create-managed-deployment.yaml')
-    deployment = ManagedOnlineDeployment.load(yaml_path)
+    deployment = ManagedOnlineDeployment.load(os.path.join(base_path,'create-managed-deployment.yaml'))
     deployment.endpoint_name = endpoint_name
     ml_client.begin_create_or_update(deployment)
     ```
