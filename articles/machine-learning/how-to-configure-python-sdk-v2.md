@@ -28,6 +28,8 @@ ms.custom: devx-track-azurecli, devplatv2
 
 * You must have a resource group. A resource group can be created [using the Azure portal](../azure-resource-manager/management/manage-resource-groups-portal.md) or using the CLI. A resource group is created in [Install, set up, and use the CLI (v2) (preview)](how-to-configure-cli.md).
 
+* You must have Python 3 installed. 
+
 ## Installation
 
 ```terminal
@@ -74,5 +76,17 @@ To create a basic workspace, we will define the following attributes
 Using the `MLClient` created earlier, we will create the workspace. This command will start workspace creation and provide a confirmation.
 
 ```python
-ml_client.workspaces.begin_create(workspace_name=)
+# Creating a unique workspace name with current datetime to avoid conflicts
+import datetime
+basic_workspace_name = "mlw-basic-prod-" + datetime.datetime.now().strftime("%Y%m%d%H%M")
+
+ws_basic = Workspace(
+    name=basic_workspace_name,
+    location="eastus",
+    display_name="Basic workspace-example",
+    description="This example shows how to create a basic workspace",
+    hbi_workspace=False,
+    tags=dict(purpose="demo")
+)
+ml_client.workspaces.begin_create(ws_basic)
 ``` 

@@ -43,6 +43,7 @@ Provides a MLflow base image/curated environment that contains,
 [!INCLUDE [preview disclaimer](../../includes/machine-learning-preview-generic-disclaimer.md)]
 
 ## Prerequisites
+# [Azure CLI](#tab/azurecli)
 
 [!INCLUDE [basic cli prereqs](../../includes/machine-learning-cli-prereqs.md)]
 
@@ -53,6 +54,21 @@ Provides a MLflow base image/curated environment that contains,
 In this code snippets used in this article, the `ENDPOINT_NAME` environment variable contains the name of the endpoint to create and use. To set this, use the following command from the CLI. Replace `<YOUR_ENDPOINT_NAME>` with the name of your endpoint:
 
 :::code language="azurecli" source="~/azureml-examples-main/cli/deploy-managed-online-endpoint-mlflow.sh" ID="set_endpoint_name":::
+
+# [Python SDK v2](#tab/python)
+
+[!INCLUDE [basic python sdk v2 prereqs](../../includes/machine-learning-python-sdk-v2-prereqs.md)]
+
+* You must have a MLflow model. The examples in this article are based on the models from [https://github.com/Azure/azureml-examples/tree/main/cli/endpoints/online/mlflow](https://github.com/Azure/azureml-examples/tree/main/cli/endpoints/online/mlflow).
+
+[!INCLUDE [python sdk v2 prep](../../includes/machine-learning-python-sdk-v2-prepare.md)]
+
+In this code snippets used in this article, the `endpoint_name` variable contains the name of the endpoint to create and use. Replace `<YOUR_ENDPOINT_NAME>` with the name of your endpoint. 
+
+```python
+endpoint_name = '<YOUR_ENDPOINT_NAME>'
+```
+
 
 ## Deploy using CLI (v2)
 

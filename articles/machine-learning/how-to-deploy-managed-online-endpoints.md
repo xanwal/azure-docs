@@ -22,8 +22,6 @@ ms.custom: how-to, devplatv2, ignite-fall-2021, cliv2
   [!INCLUDE [python sdk v2](../../includes/machine-learning-python-sdk-v2.md)]
   [!INCLUDE [python sdk v2 how to update](../../includes/machine-learning-python-sdk-v2-update-note.md)]
 
----
-
 Learn how to use an online endpoint (preview) to deploy your model, so you don't have to create and manage the underlying infrastructure. You'll begin by deploying a model on your local machine to debug any errors, and then you'll deploy and test it in Azure.
 
 You'll also learn how to view the logs and monitor the service-level agreement (SLA). You start with a model and end up with a scalable HTTPS/REST endpoint that you can use for online and real-time scoring. 
